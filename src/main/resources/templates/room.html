@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Room</title>
+</head>
+<body data-room-id="{{roomId}}" data-member-id="{{memberId}}">
+<h1>어서오세요, {{memberId}}님! {{roomId}}방입니다.</h1>
+<input type="text" id="input-box">
+<button type="button" id="send-btn">입력</button>
+<ul id="chat-box">
+</ul>
+<script type="text/javascript" src="/webjars/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="/webjars/sockjs-client/sockjs.min.js"></script>
+<script type="text/javascript">
+  $(function () {
+    const $body = $('body');
+    const roomId = $body.data('room-id');
+    const memberId = $body.data('member-id');
+    const $chatBox = $('#chat-box');
+    const $inputBox = $('#input-box');
+    const $sendBtn = $('#send-btn');
+
+    const sock = new SockJS("/ws/chat");
+    sock.onopen = function () {
+      // send : connection으로 message를 전달
+      // connection이 맺어진 후 가입(JOIN) 메시지를 전달
+      sock.send(JSON.stringify({roomId: roomId, type: 'JOIN', memberId: memberId}));
+
+      // onmessage : message를 받았을 때의 callback
+      sock.onmessage = function (e) {
+        const content = JSON.parse(e.data);
+        $chatBox.append('<li>' + content.text + '(' + content.memberId + ')</li>')
+      }
+    };
+
+    $sendBtn.click(function () {
+      const text = $inputBox.val();
+      const payload = {
+        roomId: roomId,
+        memberId: memberId,
+        text: text,
+        type: 'CHAT'
+      };
+      sock.send(JSON.stringify(payload));
+      $inputBox.val('');
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Index</title>
+</head>
+<body>
+<h1>Hello World!</h1>
+<input type="text" id="room-id">
+<button type="button" id="go">Go!</button>
+<script type="text/javascript" src="/webjars/jquery/jquery.min.js"></script>
+<script type="text/javascript">
+  $(function () {
+    $('#go').click(function (evt) {
+      const roomId = $('#room-id').val();
+      location.href = `/room/${roomId}`;
+    });
+  });
+</script>
+</body>
+</html>

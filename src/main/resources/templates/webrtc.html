@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Callee</title>
+  <link rel="icon" href="data:;base64,=">
+</head>
+<body data-call="{{call}}">
+<button type="button" id="start-button">start</button>
+<div>
+  <video id="localVideo" autoplay playsinline controls="false"></video>
+  <video id="removeVideo" autoplay playsinline controls="false"></video>
+</div>
+<input type="text" id="input-box">
+<button type="button" id="send-button">Send</button>
+<ul id="chat-box">
+
+</ul>
+<script type="text/javascript" src="/webjars/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="/webjars/sockjs-client/sockjs.min.js"></script>
+<script type="text/javascript" src="/webrtc/webrtc.js"></script>
+<script type="text/javascript">
+  $(function () {
+    const webrtc = new WebRTC('/ws/webrtc');
+    webrtc.initPeerConnection(async event => {
+      const message = event.data;
+      $chatBox.append($(`<li>${message}</li>`));
+    });
+    webrtc.initSignal($('body').data('call'));
+
+    const $inputBox = $('#input-box');
+    const $sendButton = $('#send-button');
+    const $chatBox = $('#chat-box');
+
+    $sendButton.click(function (e) {
+      const message = $inputBox.val();
+      $chatBox.append($(`<li>${message}</li>`));
+      dataChannel.send(message);
+      $inputBox.val('');
+    });
+
+    const $startButton = $('#start-button');
+    $startButton.click(function () {
+      webrtc.play();
+    })
+  })
+</script>
+</body>
+</html>
