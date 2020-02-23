@@ -55,9 +55,9 @@
   }
 
   function onDataChannel(event) {
+    console.log('ondatachannel', event);
     const channel = event.channel;
     channel.addEventListener('message', function (e) {
-      console.log('ondatamessage', e);
       const chatBox = document.getElementById('chat-box');
       chatBox.innerHTML = chatBox.innerHTML + `<li>${e.data}</li>`;
     });
@@ -70,11 +70,9 @@
   }
 
   function onTrack(event) {
-    console.log('ontrack', event);
     const remoteVideo = document.getElementById('remoteVideo');
     if (remoteVideo.srcObject !== event.streams[0]) {
       remoteVideo.srcObject = event.streams[0];
-      console.log('pc2 received remote stream');
     }
   }
 
