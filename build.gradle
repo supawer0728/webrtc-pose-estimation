@@ -13,9 +13,9 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-mustache'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    compile 'org.springframework.boot:spring-boot-starter-mustache'
+    compile 'org.springframework.boot:spring-boot-starter-web'
+    compile 'org.springframework.boot:spring-boot-starter-websocket'
 
     compile 'org.webjars:webjars-locator:0.38'
     compile 'org.webjars:jquery:3.4.1'
