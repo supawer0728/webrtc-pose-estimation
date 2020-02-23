@@ -8,18 +8,24 @@ group = 'com.parfait.study'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '1.8'
 
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    compile 'org.springframework.boot:spring-boot-starter-mustache'
-    compile 'org.springframework.boot:spring-boot-starter-web'
-    compile 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'org.springframework.boot:spring-boot-starter-mustache'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
-    compile 'org.webjars:webjars-locator:0.38'
-    compile 'org.webjars:jquery:3.4.1'
-    compile 'org.webjars:sockjs-client:1.1.2'
+    implementation 'org.webjars:webjars-locator:0.38'
+    implementation 'org.webjars:jquery:3.4.1'
+    implementation 'org.webjars:sockjs-client:1.1.2'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

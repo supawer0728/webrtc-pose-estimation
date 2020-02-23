@@ -16,25 +16,25 @@ public class ChatController {
 
     @GetMapping
     public String index() {
-        return "/index";
+        return "index";
     }
 
     @GetMapping("/caller")
     public String caller(Model model) {
         model.addAttribute("call", true);
-        return "/caller";
+        return "caller";
     }
 
     @GetMapping("/callee")
     public String callee(Model model) {
         model.addAttribute("call", false);
-        return "/callee";
+        return "callee";
     }
 
     @GetMapping("/room/{roomId}")
     public String room(@PathVariable String roomId, Model model) {
         model.addAttribute("roomId", roomId);
         model.addAttribute("memberId", "noname" + memberId.getAndIncrement());
-        return "/room";
+        return "room";
     }
 }
