@@ -5,72 +5,107 @@
   <title>Callee</title>
   <link rel="icon" href="data:;base64,=">
 </head>
-<body data-call="{{call}}">
-<button type="button" id="start-button">start</button>
+<body onload="start()" data-call="{{call}}">
 <div>
   <video id="localVideo" autoplay playsinline controls="false"></video>
-  <video id="removeVideo" autoplay playsinline controls="false"></video>
+  <video id="remoteVideo" autoplay playsinline controls="false"></video>
 </div>
-<input type="text" id="input-box">
-<button type="button" id="send-button">Send</button>
+<input type="text" id="message">
+<button type="button" id="send-button">SEND</button>
 <ul id="chat-box">
 
 </ul>
-<script type="text/javascript" src="/webjars/jquery/3.4.1/jquery.min.js"></script>
 <script type="text/javascript" src="/webjars/sockjs-client/1.1.2/sockjs.min.js"></script>
+<script type="text/javascript" src="/webrtc/webrtc.js"></script>
 <script type="text/javascript">
-  $(function () {
-    const configuration = {
-      'iceServers': [
-        {
-          'urls': [
-            'stun:stun.l.google.com:19302',
-            'stun:stun1.l.google.com:19302',
-            'stun:stun2.l.google.com:19302',
-            'stun:stun3.l.google.com:19302',
-            'stun:stun4.l.google.com:19302'
-          ]
-        }
-      ]
-    };
-    const peerConnection = new RTCPeerConnection(this.configuration);
-    const sockJs = new SockJS("/ws/webrtc");
-    sockJs.onopen = function () {
-      console.log('signaling connected');
-      sockJs.onmessage = async event => {
-        const message = JSON.parse(event.data);
-        console.log('signaling message: ', message);
-        // WebRTC 연결 요청 받은 경우
-        if (message.offer) {
-          await peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer));
-          const answer = await peerConnection.createAnswer();
-          await peerConnection.setLocalDescription(answer);
-          sockJs.send(JSON.stringify({'answer': answer}));
-        }
-        // ICE Candidate 요청을 받은 경우
-        if (message.candidate) {
-          peerConnection.addIceCandidate(message.candidate)
-                        .then(() => console.log('icecandidate added'))
-                        .catch(e => {
-                          console.error('Error adding received ice candidate', e);
-                        });
-        }
-      };
-    };
-
-    peerConnection.onicecandidate = event => {
-      if (event.candidate) {
-        sockJs.send(JSON.stringify({'candidate': event.candidate}));
+  const configuration = {
+    'iceServers': [
+      {
+        'urls': [
+          'stun:stun.l.google.com:19302',
+          'stun:stun1.l.google.com:19302',
+          'stun:stun2.l.google.com:19302',
+          'stun:stun3.l.google.com:19302',
+          'stun:stun4.l.google.com:19302'
+        ]
       }
-    };
+    ]
+  };
+  const offerOptions = {
+    offerToReceiveAudio: true,
+    offerToReceiveVideo: true
+  };
+  let peerConnection;
+  let signalingClient;
+  let dataChannel;
+  let localStream;
 
-    const remoteStream = new MediaStream();
-    peerConnection.ontrack = event => {
-      console.log('ontrack', event);
-      document.querySelector('#remoteVideo').srcObject = remoteStream;
-      peerConnection.addTrack(event.track, remoteStream);
-    };
-  });
+  async function start() {
+    const stream = await navigator.mediaDevices.getUserMedia({'video': true, 'audio': true});
+    document.getElementById('localVideo').srcObject = stream;
+    localStream = stream;
+    peerConnection = new RTCPeerConnection(configuration);
+    stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+    signalingClient = new SockJS('/ws/webrtc');
+    dataChannel = peerConnection.createDataChannel('test');
+    peerConnection.ondatachannel = onDataChannel;
+    peerConnection.onicecandidate = onIceCandidate;
+    peerConnection.ontrack = onTrack;
+    signalingClient.onopen = onSignalOpen;
+  }
+
+  function onDataChannel(event) {
+    const channel = event.channel;
+    channel.addEventListener('message', function (e) {
+      console.log('ondatamessage', e);
+      const chatBox = document.getElementById('chat-box');
+      chatBox.innerHTML = chatBox.innerHTML + `<li>${e.data}</li>`;
+    });
+  }
+
+  function onIceCandidate(event) {
+    if (event && event.candidate) {
+      signalingClient.send(JSON.stringify({'candidate': event.candidate}));
+    }
+  }
+
+  function onTrack(event) {
+    console.log('ontrack', event);
+    const remoteVideo = document.getElementById('remoteVideo');
+    if (remoteVideo.srcObject !== event.streams[0]) {
+      remoteVideo.srcObject = event.streams[0];
+      console.log('pc2 received remote stream');
+    }
+  }
+
+  function onSignalOpen() {
+    signalingClient.onmessage = async event => {
+      const message = JSON.parse(event.data);
+
+      // WebRTC 연결 요청 받은 경우
+      if (message.offer) {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer));
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        signalingClient.send(JSON.stringify({'answer': answer}));
+      }
+
+      // ICE Candidate 요청을 받은 경우
+      if (message.candidate) {
+        peerConnection.addIceCandidate(message.candidate)
+                      .then(() => console.log('iceCandidate added'))
+                      .catch(e => {
+                        console.error('Error adding received ice candidate', e);
+                      });
+      }
+    }
+  }
+
+  document.getElementById('send-button').addEventListener('click', function (e) {
+    const message = document.getElementById('message');
+    dataChannel.send(message.value);
+    message.value = '';
+  })
 </script>
 </body>
 </html>
