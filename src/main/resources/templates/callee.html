@@ -74,7 +74,11 @@
   }
 
   async function showRemoteVideo() {
+    console.log(
+      `canvasWidth: ${remoteCanvas.width}, canvasHeight: ${remoteCanvas.height}, videoWidth: ${remoteVideo.videoWidth}, videoHeight: ${remoteVideo.videoHeight}`);
     await showSkeleton(remoteVideo, remoteCanvas, remoteContext);
+    console.log(
+      `canvasWidth: ${remoteCanvas.width}, canvasHeight: ${remoteCanvas.height}, videoWidth: ${remoteVideo.videoWidth}, videoHeight: ${remoteVideo.videoHeight}`);
   }
 
   async function showSkeleton(video, canvas, context) {
@@ -101,9 +105,6 @@
     context.translate(-canvas.width, 0);
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     context.restore();
-
-    console.log(
-      `canvasWidth: ${canvas.width}, canvasHeight: ${canvas.height}, videoWidth: ${video.videoWidth}, videoHeight: ${video.videoHeight}`);
 
     poses.forEach(pose => {
       const score = pose.score;
