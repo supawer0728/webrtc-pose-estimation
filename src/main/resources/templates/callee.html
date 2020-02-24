@@ -74,29 +74,21 @@
   }
 
   async function showRemoteVideo() {
-    console.log(
-      `canvasWidth: ${remoteCanvas.width}, canvasHeight: ${remoteCanvas.height}, videoWidth: ${remoteVideo.videoWidth}, videoHeight: ${remoteVideo.videoHeight}`);
     await showSkeleton(remoteVideo, remoteCanvas, remoteContext);
-    console.log(
-      `canvasWidth: ${remoteCanvas.width}, canvasHeight: ${remoteCanvas.height}, videoWidth: ${remoteVideo.videoWidth}, videoHeight: ${remoteVideo.videoHeight}`);
   }
 
   async function showSkeleton(video, canvas, context) {
     canvas.width = video.videoWidth;
+    video.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    console.log(
-      `canvasWidth: ${remoteCanvas.width}, canvasHeight: ${remoteCanvas.height}, videoWidth: ${remoteVideo.videoWidth}, videoHeight: ${remoteVideo.videoHeight}`);
+    video.height = video.videoHeight;
     const net = await posenet.load({
       architecture: 'MobileNetV1',
       outputStride: 16,
       inputResolution: {width: canvas.width, height: canvas.height},
       multiplier: 0.75
     });
-    console.log(
-      `canvasWidth: ${remoteCanvas.width}, canvasHeight: ${remoteCanvas.height}, videoWidth: ${remoteVideo.videoWidth}, videoHeight: ${remoteVideo.videoHeight}`);
     await poseDetectionFrame(video, canvas, context, net);
-    console.log(
-      `canvasWidth: ${remoteCanvas.width}, canvasHeight: ${remoteCanvas.height}, videoWidth: ${remoteVideo.videoWidth}, videoHeight: ${remoteVideo.videoHeight}`);
   }
 
   async function poseDetectionFrame(video, canvas, context, net) {
