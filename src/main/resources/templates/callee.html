@@ -4,11 +4,16 @@
   <meta charset="UTF-8">
   <title>Callee</title>
   <link rel="icon" href="data:;base64,=">
+  <script src="https://unpkg.com/@tensorflow/tfjs"></script>
+  <script src="https://unpkg.com/@tensorflow-models/posenet"></script>
+  <script src="/util/util.js"></script>
 </head>
 <body onload="start()" data-call="{{call}}">
 <div>
-  <video id="localVideo" autoplay playsinline controls="false"></video>
-  <video id="remoteVideo" autoplay playsinline controls="false"></video>
+  <video id="localVideo" width="640" height="480" style="display: none;" autoplay playsinline controls="false"></video>
+  <canvas id="localCanvas"></canvas>
+  <video id="remoteVideo" width="640" height="480" style="display: none;" autoplay playsinline controls="false"></video>
+  <canvas id="remoteCanvas"></canvas>
 </div>
 <input type="text" id="message">
 <button type="button" id="send-button">SEND</button>
@@ -18,6 +23,13 @@
 <script type="text/javascript" src="/webjars/sockjs-client/1.1.2/sockjs.min.js"></script>
 <script type="text/javascript" src="/webrtc/webrtc.js"></script>
 <script type="text/javascript">
+  const localVideo = document.getElementById('localVideo');
+  const localCanvas = document.getElementById('localCanvas');
+  const localContext = localCanvas.getContext('2d');
+  const remoteVideo = document.getElementById('remoteVideo');
+  const remoteCanvas = document.getElementById('remoteCanvas');
+  const remoteContext = remoteCanvas.getContext('2d');
+
   const configuration = {
     'iceServers': [
       {
@@ -41,8 +53,11 @@
   let localStream;
 
   async function start() {
+    localVideo.onloadedmetadata = showLocalVideo;
+    remoteVideo.onloadedmetadata = showRemoteVideo;
+
     const stream = await navigator.mediaDevices.getUserMedia({'video': true, 'audio': true});
-    document.getElementById('localVideo').srcObject = stream;
+    localVideo.srcObject = stream;
     localStream = stream;
     peerConnection = new RTCPeerConnection(configuration);
     stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
@@ -52,6 +67,51 @@
     peerConnection.onicecandidate = onIceCandidate;
     peerConnection.ontrack = onTrack;
     signalingClient.onopen = onSignalOpen;
+  }
+
+  async function showLocalVideo() {
+    await showSkeleton(localVideo, localCanvas, localContext);
+  }
+
+  async function showRemoteVideo() {
+    await showSkeleton(remoteVideo, remoteCanvas, remoteContext);
+  }
+
+  async function showSkeleton(video, canvas, context) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const net = await posenet.load({
+      architecture: 'MobileNetV1',
+      outputStride: 16,
+      inputResolution: {width: canvas.width, height: canvas.height},
+      multiplier: 0.75
+    });
+    setInterval(() => {
+      poseDetectionFrame(video, canvas, context, net);
+    }, 500);
+  }
+
+  async function poseDetectionFrame(video, canvas, context, net) {
+    const minPoseConfidence = 0.1;
+    const minPartConfidence = 0.5;
+    const poses = await net.estimatePoses(video, {flipHorizontal: true, decodingMethod: 'single-person'});
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
+    context.save();
+    context.scale(-1, 1);
+    context.translate(-canvas.width, 0);
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    context.restore();
+
+    poses.forEach(pose => {
+      const score = pose.score;
+      const keypoints = pose.keypoints;
+      if (score >= minPoseConfidence) {
+        drawKeypoints(keypoints, minPartConfidence, context);
+        drawSkeleton(keypoints, minPartConfidence, context);
+      }
+    });
   }
 
   function onDataChannel(event) {
