@@ -86,9 +86,7 @@
       inputResolution: {width: canvas.width, height: canvas.height},
       multiplier: 0.75
     });
-    setInterval(() => {
-      poseDetectionFrame(video, canvas, context, net);
-    }, 100);
+    await poseDetectionFrame(video, canvas, context, net);
   }
 
   async function poseDetectionFrame(video, canvas, context, net) {
@@ -112,6 +110,8 @@
         drawSkeleton(keypoints, minPartConfidence, context);
       }
     });
+
+    requestAnimationFrame(() => poseDetectionFrame(video, canvas, context, net));
   }
 
   function onDataChannel(event) {
