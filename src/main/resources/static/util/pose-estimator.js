@@ -1,5 +1,5 @@
 class PoseEstimator {
-  constructor(buffer = 200, estimateCount = 20, estimateScore = 0.7, distanceLimit = 20, confidenceLimit = 0.5) {
+  constructor(buffer = 200, estimateCount = 20, estimateScore = 0.7, distanceLimit = 50, confidenceLimit = 0.5) {
     this.scores = new Array(buffer);
     this.buffer = buffer;
     this.estimateCount = estimateCount;
