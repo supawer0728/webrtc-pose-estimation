@@ -15,6 +15,9 @@
   <video id="remoteVideo" style="display: none;" autoplay playsinline controls="false"></video>
   <canvas id="remoteCanvas"></canvas>
 </div>
+<div id="similarity">
+
+</div>
 <input type="text" id="message">
 <button type="button" id="send-button">SEND</button>
 <ul id="chat-box">
@@ -22,6 +25,7 @@
 </ul>
 <script type="text/javascript" src="/webjars/sockjs-client/1.1.2/sockjs.min.js"></script>
 <script type="text/javascript" src="/webrtc/webrtc.js"></script>
+<script type="text/javascript" src="/util/pose-estimator.js"></script>
 <script type="text/javascript">
   const localVideo = document.getElementById('localVideo');
   const localCanvas = document.getElementById('localCanvas');
@@ -29,6 +33,8 @@
   const remoteVideo = document.getElementById('remoteVideo');
   const remoteCanvas = document.getElementById('remoteCanvas');
   const remoteContext = remoteCanvas.getContext('2d');
+
+  const poseEstimator = new PoseEstimator();
 
   const configuration = {
     'iceServers': [
@@ -43,10 +49,8 @@
       }
     ]
   };
-  const offerOptions = {
-    offerToReceiveAudio: true,
-    offerToReceiveVideo: true
-  };
+
+  let combinedKeyPoints = {};
   let peerConnection;
   let signalingClient;
   let dataChannel;
@@ -70,50 +74,44 @@
   }
 
   async function showLocalVideo() {
-    await showSkeleton(localVideo, localCanvas, localContext);
+    await showSkeleton(localVideo, localCanvas, localContext, remoteCanvas, remoteContext, 'callee');
   }
 
   async function showRemoteVideo() {
-    await showSkeleton(remoteVideo, remoteCanvas, remoteContext);
+    await showSkeleton(remoteVideo, remoteCanvas, remoteContext, remoteCanvas, remoteContext, 'caller');
   }
 
-  async function showSkeleton(video, canvas, context) {
-    canvas.width = video.videoWidth;
+  async function showSkeleton(video, videoCanvas, videoContext, skeletonCanvas, skeletonContext, field) {
+    videoCanvas.width = video.videoWidth;
     video.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    videoCanvas.height = video.videoHeight;
     video.height = video.videoHeight;
     const net = await posenet.load({
       architecture: 'MobileNetV1',
       outputStride: 16,
-      inputResolution: {width: canvas.width, height: canvas.height},
-      multiplier: 0.75
+      inputResolution: {width: videoCanvas.width, height: videoCanvas.height},
+      multiplier: 0.5
     });
-    await poseDetectionFrame(video, canvas, context, net);
+    await poseDetectionFrame(video, videoCanvas, videoContext, skeletonCanvas, skeletonContext, net, field);
   }
 
-  async function poseDetectionFrame(video, canvas, context, net) {
-    const minPoseConfidence = 0.1;
-    const minPartConfidence = 0.5;
+  async function poseDetectionFrame(video, videoCanvas, videoContext, skeletonCanvas, skeletonContext, net, field) {
     const poses = await net.estimatePoses(video, {flipHorizontal: true, decodingMethod: 'single-person'});
 
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    videoContext.clearRect(0, 0, videoCanvas.width, videoCanvas.height);
 
-    context.save();
-    context.scale(-1, 1);
-    context.translate(-canvas.width, 0);
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    context.restore();
+    videoContext.save();
+    videoContext.scale(-1, 1);
+    videoContext.translate(-videoCanvas.width, 0);
+    videoContext.drawImage(video, 0, 0, videoCanvas.width, videoCanvas.height);
+    videoContext.restore();
 
     poses.forEach(pose => {
-      const score = pose.score;
-      const keypoints = pose.keypoints;
-      if (score >= minPoseConfidence) {
-        drawKeypoints(keypoints, minPartConfidence, context);
-        drawSkeleton(keypoints, minPartConfidence, context);
-      }
+      updateKeyPoints(pose, field);
     });
 
-    requestAnimationFrame(() => poseDetectionFrame(video, canvas, context, net));
+    requestAnimationFrame(
+      () => poseDetectionFrame(video, videoCanvas, videoContext, skeletonCanvas, skeletonContext, net, field));
   }
 
   function onDataChannel(event) {
@@ -123,6 +121,32 @@
       const chatBox = document.getElementById('chat-box');
       chatBox.innerHTML = chatBox.innerHTML + `<li>${e.data}</li>`;
     });
+  }
+
+  function updateKeyPoints(pose, field) {
+    const minPoseConfidence = 0.1;
+    const minPartConfidence = 0.5;
+    const drawScale = 1;
+    const score = pose.score;
+    const keypoints = pose.keypoints;
+
+    if (score >= minPoseConfidence) {
+      combinedKeyPoints[field] = keypoints;
+      if (combinedKeyPoints.callee && combinedKeyPoints.caller) {
+        const callee = combinedKeyPoints.callee;
+        const caller = combinedKeyPoints.caller;
+        combinedKeyPoints = {};
+
+        console.log('callee: ', callee, 'caller: ', caller);
+        drawKeypoints(callee, minPartConfidence, remoteContext, drawScale, 'red');
+        drawSkeleton(callee, minPartConfidence, remoteContext, drawScale, 'red');
+        drawKeypoints(caller, minPartConfidence, remoteContext, drawScale, 'aqua');
+        drawSkeleton(caller, minPartConfidence, remoteContext, drawScale, 'aqua');
+
+        poseEstimator.estimate(callee, caller);
+        document.getElementById('similarity').innerHTML = poseEstimator.isSimilar() ? '비슷해요' : '안비슷해요';
+      }
+    }
   }
 
   function onIceCandidate(event) {

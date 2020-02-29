@@ -94,13 +94,15 @@ function drawSegment([ay, ax], [by, bx], color, scale, ctx) {
 /**
  * Draws a pose skeleton by looking up all adjacent keypoints/joints
  */
-function drawSkeleton(keypoints, minConfidence, ctx, scale = 1) {
+function drawSkeleton(keypoints, minConfidence, ctx, scale = 1, c) {
   const adjacentKeyPoints =
     posenet.getAdjacentKeyPoints(keypoints, minConfidence);
 
+  const colorValue = c ? c : color;
+
   adjacentKeyPoints.forEach((keypoints) => {
     drawSegment(
-      toTuple(keypoints[0].position), toTuple(keypoints[1].position), color,
+      toTuple(keypoints[0].position), toTuple(keypoints[1].position), colorValue,
       scale, ctx);
   });
 }
@@ -108,7 +110,7 @@ function drawSkeleton(keypoints, minConfidence, ctx, scale = 1) {
 /**
  * Draw pose keypoints onto a canvas
  */
-function drawKeypoints(keypoints, minConfidence, ctx, scale = 1) {
+function drawKeypoints(keypoints, minConfidence, ctx, scale = 1, c) {
   for (let i = 0; i < keypoints.length; i++) {
     const keypoint = keypoints[i];
 
@@ -117,7 +119,8 @@ function drawKeypoints(keypoints, minConfidence, ctx, scale = 1) {
     }
 
     const {y, x} = keypoint.position;
-    drawPoint(ctx, y * scale, x * scale, 3, color);
+    const colorValue = c ? c : color;
+    drawPoint(ctx, y * scale, x * scale, 3, colorValue);
   }
 }
 
