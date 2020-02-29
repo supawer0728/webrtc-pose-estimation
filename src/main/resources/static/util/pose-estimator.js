@@ -24,7 +24,7 @@ class PoseEstimator {
                            .map(part => calculateDistance(originalMap.get(part), compareMap.get(part)));
 
     const distanceLimit = this.distanceLimit;
-    const validDistances = distances.map(distance => distance <= distanceLimit);
+    const validDistances = distances.filter(distance => distance <= distanceLimit);
 
     this.addScore(validDistances.length / distances.length)
   }
