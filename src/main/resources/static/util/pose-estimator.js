@@ -1,5 +1,5 @@
 class PoseEstimator {
-  constructor(buffer = 200, estimateCount = 20, estimateScore = 0.7, distanceLimit = 10, confidenceLimit = 0.5) {
+  constructor(buffer = 200, estimateCount = 20, estimateScore = 0.7, distanceLimit = 20, confidenceLimit = 0.5) {
     this.scores = new Array(buffer);
     this.buffer = buffer;
     this.estimateCount = estimateCount;
@@ -23,6 +23,7 @@ class PoseEstimator {
     const distances = Array.from(originalMap.keys())
                            .map(part => calculateDistance(originalMap.get(part), compareMap.get(part)));
 
+    console.log('distances: ', distances);
     const distanceLimit = this.distanceLimit;
     const validDistances = distances.filter(distance => distance <= distanceLimit);
 

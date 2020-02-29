@@ -137,7 +137,6 @@
         const caller = combinedKeyPoints.caller;
         combinedKeyPoints = {};
 
-        console.log('callee: ', callee, 'caller: ', caller);
         drawKeypoints(callee, minPartConfidence, remoteContext, drawScale, 'red');
         drawSkeleton(callee, minPartConfidence, remoteContext, drawScale, 'red');
         drawKeypoints(caller, minPartConfidence, remoteContext, drawScale, 'aqua');
