@@ -60,7 +60,16 @@
     localVideo.onloadedmetadata = showLocalVideo;
     remoteVideo.onloadedmetadata = showRemoteVideo;
 
-    const stream = await navigator.mediaDevices.getUserMedia({'video': true, 'audio': true});
+    const stream = await navigator.mediaDevices.getUserMedia({
+      'video': {
+        'width': {
+          'exact': 300
+        },
+        'height': {
+          'exact': 300
+        }
+      }, 'audio': true
+    });
     localVideo.srcObject = stream;
     localStream = stream;
     peerConnection = new RTCPeerConnection(configuration);
@@ -87,10 +96,10 @@
     videoCanvas.height = video.videoHeight;
     video.height = video.videoHeight;
     const net = await posenet.load({
-      architecture: 'MobileNetV1',
-      outputStride: 16,
+      architecture: 'ResNet50',
+      outputStride: 32,
       inputResolution: {width: videoCanvas.width, height: videoCanvas.height},
-      multiplier: 0.5
+      quantBytes: 1
     });
     await poseDetectionFrame(video, videoCanvas, videoContext, skeletonCanvas, skeletonContext, net, field);
   }
